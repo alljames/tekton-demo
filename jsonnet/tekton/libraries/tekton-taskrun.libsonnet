@@ -15,25 +15,22 @@ buildname:: error "buildname is required",
     "taskRef": {
       "name": $.taskref,
     },
+    "podTemplate": {
     "affinity": {
     "nodeAffinity": {
-      "requiredDuringSchedulingIgnoredDuringExecution": {
-        "nodeSelectorTerms": [ 
-          {
-          "matchExpressions": [
-            {
-              "key": "cloud.google.com/gke-nodepool",
-              "operator": "In",
-              "values": [
-                "cicd"
-              ]
-            }
+    "requiredDuringSchedulingIgnoredDuringExecution": {
+    "nodeSelectorTerms": [{
+      "matchExpressions": [
+        {
+          "key": "cloud.google.com/gke-nodepool",
+          "operator": "In",
+          "values": [
+            "cicd"
           ]
-          }
+        }
       ]
-    }
-    }
-    },
+    }]
+    }}}},
     "inputs": {
       "resources": [
         {
@@ -45,24 +42,26 @@ buildname:: error "buildname is required",
       ],
       "params": [
         {
-          "name": "pathToDockerFile",
-          "value": (std.join("/", ["/workspace", std.join("-", ["git", $.buildname]), "Dockerfile"])),
+          "name": "pathToContext",
+          "value": "/workspace/git-hellok8s/",
+          // "value": (std.join("/", ["/workspace", std.join("-", ["git", $.buildname])])),
         },
         {
-          "name": "pathToContext",
-          "value": (std.join("/", ["/workspace", std.join("-", ["git", $.buildname])])),
+          "name": "pathToDockerFile",
+          "value": "Dockerfile",
+          // "value": (std.join("/", ["/workspace", std.join("-", ["git", $.buildname]), "Dockerfile"])),
         }
       ]
     },
     "outputs": {
-      "resources": [
-        {
-          "name": "builtImage",
-          "resourceRef": {
-            "name": (std.join("-", ["img", $.buildname]))
-          }
+    "resources": [
+      {
+        "name": "builtImage",
+        "resourceRef": {
+          "name": (std.join("-", ["img", $.buildname]))
         }
-      ]
+      }
+    ]
     }
   }
 }

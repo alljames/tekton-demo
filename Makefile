@@ -7,7 +7,7 @@ GCP_LOCATION := europe-west1
 GCP_ZONE := ${GCP_LOCATION}-d
 MACHINE_TYPE := 		n1-standard-1
 SMALL_MACHINE_TYPE := 	f1-micro
-K8S_VERSION := 1.13.6
+K8S_VERSION := 1.14.10
 
 PROJECT_NAME := tektondemo
 CLUSTER_NAME := ${PROJECT_NAME}
@@ -25,7 +25,7 @@ PATCH := 1
 IMAGE_TAG := ${MAJOR}-${MINOR}-${PATCH}
 ###############################################################
 
-TEKTON_VERSION := 0.6.0
+TEKTON_VERSION := 0.10.1
 
 KO_DOCKER_REPO := eu.gcr.io/${GCP_PROJECT}
 
@@ -128,22 +128,26 @@ tekton_set_rbac:
 
 tekton_resource_validate:
 	@kubecfg show ${PROJECT_DIR}/jsonnet/tekton/tekton-resources.jsonnet \
-	-V BUILD_NAME=${BUILD_NAME} -V IMAGE_TAG="${IMAGE_TAG}" -V GIT_REPO_URL="${GIT_REPO_URL}" -V GCR_REGISTRY="${KO_DOCKER_REPO}" \
+	-V BUILD_NAME=${BUILD_NAME} -V IMAGE_TAG="${IMAGE_TAG}" \
+	-V GIT_REPO_URL="${GIT_REPO_URL}" -V GCR_REGISTRY="${KO_DOCKER_REPO}" \
 	| kubectl apply --recursive=true --filename - --validate=true --dry-run=true
 
 tekton_runs_validate:
 	@kubecfg show ${PROJECT_DIR}/jsonnet/tekton/tekton-runs.jsonnet \
-	-V BUILD_NAME=${BUILD_NAME} -V IMAGE_TAG="${IMAGE_TAG}" -V GIT_REPO_URL="${GIT_REPO_URL}" -V GCR_REGISTRY="${KO_DOCKER_REPO}" \
+	-V BUILD_NAME=${BUILD_NAME} -V IMAGE_TAG="${IMAGE_TAG}" \
+	-V GIT_REPO_URL="${GIT_REPO_URL}" -V GCR_REGISTRY="${KO_DOCKER_REPO}" \
 	| kubectl apply --recursive=true --filename - --validate=true --dry-run=true
 
 tekton_resource_apply: tekton_resource_validate
 	@kubecfg show ${PROJECT_DIR}/jsonnet/tekton/tekton-resources.jsonnet \
-	-V BUILD_NAME=${BUILD_NAME} -V IMAGE_TAG="${IMAGE_TAG}" -V GIT_REPO_URL="${GIT_REPO_URL}" -V GCR_REGISTRY="${KO_DOCKER_REPO}" \
+	-V BUILD_NAME=${BUILD_NAME} -V IMAGE_TAG="${IMAGE_TAG}" \
+	-V GIT_REPO_URL="${GIT_REPO_URL}" -V GCR_REGISTRY="${KO_DOCKER_REPO}" \
 	| kubectl apply --recursive=true --filename -
 
 tekton_trigger: tekton_runs_validate tekton_resource_apply ## Create resources and trigger a run
 	@kubecfg show ${PROJECT_DIR}/jsonnet/tekton/tekton-runs.jsonnet \
-	-V BUILD_NAME=${BUILD_NAME} -V IMAGE_TAG="${IMAGE_TAG}" -V GIT_REPO_URL="${GIT_REPO_URL}" -V GCR_REGISTRY="${KO_DOCKER_REPO}" \
+	-V BUILD_NAME=${BUILD_NAME} -V IMAGE_TAG="${IMAGE_TAG}" \
+	-V GIT_REPO_URL="${GIT_REPO_URL}" -V GCR_REGISTRY="${KO_DOCKER_REPO}" \
 	| kubectl apply --recursive=true --filename -
 
 tekton_resource_show: ## List Tekton resources

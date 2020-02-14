@@ -1,0 +1,105 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: hellok8s-containerimage
+spec:
+  type: image
+  params:
+  - name: url
+    value: localhost:5000/hellok8simage
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: master-hellok8s
+spec:
+  type: git
+  params:
+  - name: url
+    value: https://github.com/alljames/hello-kubernetes.git
+  - name: revision
+    value: master
+---
+# Builds an image via kaniko and pushes it to registry.
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: pull-build-push-gitrepo
+spec:
+  inputs:
+    resources:
+    - name: gitrepo
+      type: git
+    params:
+    - name: pathToDockerFile
+      type: string
+      description: The path to the dockerfile to build
+      default: /workspace/workspace/Dockerfile
+    - name: pathToContext
+      description: The build context used by Kaniko (https://github.com/GoogleContainerTools/kaniko#kaniko-build-contexts)
+      default: /workspace/workspace
+    - name: pathToDigestFile
+      type: string
+      description: The path to the digest file for built resources
+      default: /workspace/workspace/digestfile.dat
+  outputs:
+    resources:
+    - name: builtImage
+      type: image
+  steps:
+  - name: ubuntu-debug-pwd
+    image: ubuntu
+    command: ["pwd"]
+  - name: ubuntu-debug-ls
+    image: ubuntu
+    command: ["ls"]
+    args:
+    - -las
+  - name: build-and-push
+    workingDir: "/workspace/hello-kubernetes"
+    image: gcr.io/kaniko-project/executor:v0.15.0
+    # specifying DOCKER_CONFIG is required to allow kaniko to detect docker credential
+    env:
+    - name: "DOCKER_CONFIG"
+      value: "/tekton/home/.docker/"
+    args:
+    - --destination=$(outputs.resources.builtImage.url)
+    - --digest-file=$(inputs.params.pathToDigestFile)
+    - --context=$(inputs.params.pathToContext)
+    - --oci-layout-path=$(inputs.resources.builtImage.path)
+    - --verbosity=debug
+    securityContext:
+      runAsUser: 0
+  - name: cat-digest
+    image: ubuntu
+    command: ["cat"]
+    args:
+    - /workspace/gitrepo/digestfile.dat
+  sidecars:
+    - image: registry
+      name: registry
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  name: tr-git2img-hellok8s
+spec:
+  taskRef:
+    name: pull-build-push-gitrepo
+  inputs:
+    resources:
+    - name: gitrepo
+      resourceRef:
+        name: master-hellok8s
+    params:
+    - name: pathToDockerFile
+      value: /workspace/gitrepo/Dockerfile
+    - name: pathToContext
+      value: /workspace/gitrepo
+    - name: pathToDigestFile
+      value: /workspace/gitrepo/digestfile.dat
+  outputs:
+    resources:
+    - name: builtImage
+      resourceRef:
+        name: hellok8s-containerimage

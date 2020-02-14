@@ -42,7 +42,7 @@ buildname:: error "buildname is required",
     "steps": [
       {
         "name": "build-and-push",
-        "image": "gcr.io/kaniko-project/executor:v0.9.0",
+        "image": "gcr.io/kaniko-project/executor:v0.15.0",
         "command": [
           "/kaniko/executor"
         ],
@@ -51,7 +51,8 @@ buildname:: error "buildname is required",
           "--destination=${outputs.resources.builtImage.url}",
           "--context=${inputs.params.pathToContext}",
           "--cache=true",
-          "--cache-ttl=6h"
+          "--cache-ttl=6h",
+          "--reproducible"
         ],
         "volumeMounts": [
           {
@@ -63,6 +64,10 @@ buildname:: error "buildname is required",
           {
             "name": "GOOGLE_APPLICATION_CREDENTIALS",
             "value": "/secret/kaniko-secret.json"
+          },
+          {
+            "name": "DOCKER_CONFIG",
+            "value": "/tekton/home/.docker/"
           }
         ]
       }

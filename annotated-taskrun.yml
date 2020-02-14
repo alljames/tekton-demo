@@ -1,0 +1,23 @@
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  name: tr-git2img-hellok8s
+spec:
+  taskRef:
+    name: pull-build-push-gitrepo # specify Task (a template listing CI/CD steps)
+  inputs:
+    resources: # match declared inputs of Task
+    - name: gitrepo # match name of resource expected by Task
+      resourceRef:
+        name: master-hellok8s # match previously-declared PipelineResource
+    params: # override default arguments for Task
+    - name: pathToDockerFile
+      value: /workspace/thisname/Dockerfile
+    - name: pathToContext
+      value: /workspace/thisname
+  outputs: # match declared outputs of Task
+    resources:
+    - name: builtImage # match name of resource expected by Task
+      resourceRef:
+        name: hellok8s-containerimage # match previously-declared PipelineResource
